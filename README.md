@@ -1,0 +1,164 @@
+# CloudGPU MCP
+
+[CloudGPU](https://cloudgpu.app) MCP server: let an AI agent rent a GPU by the minute, run a job, bring the results back and shut the GPU down. The same API key and balance also cover CloudGPU's OpenAI-compatible model API, so an agent can call a hosted model without renting anything.
+
+> "Fine-tune a 7B base model with LoRA on data/train.jsonl and put the adapter in ./outputs."
+
+The agent checks live prices and quotes you, rents the GPU once you say yes, uploads your code and data, starts training in the background, watches the logs, downloads the adapter and destroys the instance. You get the files and the final cost.
+
+It is a local (stdio) MCP server. It works with any MCP client that can start one: Claude Code, Cursor, Cline, opencode, goose, VS Code, Windsurf and others.
+
+## Install
+
+1. Create an API key at [cloudgpu.app/api](https://cloudgpu.app/api) and add a prepaid balance (card or USDT).
+2. Add the server to your client. Node.js 18 or newer is required. The key goes in the environment variable `CLOUDGPU_API_KEY`.
+
+<details open>
+<summary><b>Claude Code</b></summary>
+
+```bash
+claude mcp add cloudgpu --env CLOUDGPU_API_KEY=cgw-sk-... -- npx -y cloudgpu-mcp
+```
+</details>
+
+<details>
+<summary><b>Cursor</b> (<code>~/.cursor/mcp.json</code> or <code>.cursor/mcp.json</code>)</summary>
+
+```json
+{
+  "mcpServers": {
+    "cloudgpu": {
+      "command": "npx",
+      "args": ["-y", "cloudgpu-mcp"],
+      "env": { "CLOUDGPU_API_KEY": "cgw-sk-..." }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>Cline</b> (MCP Servers → Configure MCP Servers → <code>cline_mcp_settings.json</code>)</summary>
+
+```json
+{
+  "mcpServers": {
+    "cloudgpu": {
+      "command": "npx",
+      "args": ["-y", "cloudgpu-mcp"],
+      "env": { "CLOUDGPU_API_KEY": "cgw-sk-..." }
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>opencode</b> (<code>opencode.json</code>)</summary>
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "cloudgpu": {
+      "type": "local",
+      "command": ["npx", "-y", "cloudgpu-mcp"],
+      "environment": { "CLOUDGPU_API_KEY": "cgw-sk-..." },
+      "enabled": true
+    }
+  }
+}
+```
+</details>
+
+<details>
+<summary><b>goose</b> (<code>~/.config/goose/config.yaml</code>, or <code>goose configure</code> → Add Extension → Command-line Extension)</summary>
+
+```yaml
+extensions:
+  cloudgpu:
+    name: cloudgpu
+    type: stdio
+    cmd: npx
+    args: ["-y", "cloudgpu-mcp"]
+    envs:
+      CLOUDGPU_API_KEY: "cgw-sk-..."
+    enabled: true
+    timeout: 300
+```
+</details>
+
+3. Optional but recommended: copy [`rules/cloudgpu.md`](rules/cloudgpu.md) into your project as `AGENTS.md`, `.cursor/rules/cloudgpu.md` or `.clinerules/cloudgpu.md`. It tells the agent to quote before renting, download before shutting down, and never leave a GPU running. The server also exposes the same text as the resource `cloudgpu://rules`.
+
+To check the install, ask your agent: "List the GPUs available, then estimate the cost for a 24 GB GPU for one hour. Do not create anything." You should see `list_gpus` and `estimate_cost` calls and a quote, and nothing is rented.
+
+## Tools
+
+| Tool | What it does |
+|---|---|
+| `get_account` | Balance, and how many instances the account may run at once |
+| `list_gpus` | GPU models with VRAM, live price per GPU-hour and availability |
+| `list_templates` | Ready-made images: JupyterLab, Ollama, ComfyUI, LLaMA-Factory, … |
+| `estimate_cost` | Live quote for a GPU and a number of hours, plus your balance afterwards; returns a `quote_id` |
+| `create_instance` | Rents from an approved quote, with a budget, a time limit and an idle limit |
+| `get_status` / `list_instances` | Status, minutes run, cost so far, auto-shutdown limits |
+| `run_command` | Runs a command on the instance; `background=true` for long jobs |
+| `tail_logs` | Latest log lines, whether the job finished, GPU utilisation |
+| `upload` / `download` | Files and folders between your computer and the instance (SFTP) |
+| `stop_instance` | Destroys the instance and stops billing |
+| `list_models` | Models on the OpenAI-compatible API, for inference without renting a GPU |
+
+The server also provides a `train_on_cloudgpu` prompt.
+
+## Guardrails
+
+- **A quote first.** `create_instance` only takes a `quote_id` from `estimate_cost` and `user_confirmed=true`.
+- **Server-side limits.** Every instance is created with `max_spend_usd`, `max_hours` and an idle limit (60 minutes by default). CloudGPU's servers check them and destroy the instance when one is hit, even if your client has disconnected or your laptop is asleep.
+- **Your own ceiling.** `CLOUDGPU_MAX_SPEND_USD` and `CLOUDGPU_MAX_HOURS` cap what the agent may set.
+- **Results before shutdown.** After commands have run, `stop_instance` refuses until something has been downloaded, unless the user confirms `force=true`.
+- **Secrets stay out of the chat.** The instance's SSH login is used inside this process and never returned to the model. Tool output is scrubbed of the API key and login details. Uploading `.ssh`, `.env`, key files or your whole home directory needs `allow_sensitive=true`.
+- **The instance stays manageable.** Commands that change the root password, SSH configuration, firewall or the platform's monitoring agent are refused. CloudGPU shuts down instances that it can no longer monitor.
+- **Read-only mode.** `CLOUDGPU_READ_ONLY=1` registers only the look-up tools.
+
+## Configuration
+
+| Env | Default | |
+|---|---|---|
+| `CLOUDGPU_API_KEY` | (required) | From https://cloudgpu.app/api |
+| `CLOUDGPU_MAX_SPEND_USD` | `50` | Highest budget the agent may set for one instance |
+| `CLOUDGPU_MAX_HOURS` | `24` | Longest time limit the agent may set |
+| `CLOUDGPU_READ_ONLY` | off | `1` = look-up tools only |
+| `CLOUDGPU_BASE_URL` | `https://cloudgpu.app` | Override the API host |
+
+## Model API on the same balance
+
+The key also works with the OpenAI-compatible API at `https://cloudgpu.app/v1`. Call `list_models` (or `GET /v1/models`) to see the available model IDs. Model prices are on [cloudgpu.app/api](https://cloudgpu.app/api).
+
+## Without MCP
+
+The server wraps CloudGPU's public REST API, which any agent or script can call with the same key:
+
+```bash
+curl https://cloudgpu.app/v1/gpu/offers -H "Authorization: Bearer $CLOUDGPU_API_KEY"
+```
+
+## Links
+
+- MCP docs: https://cloudgpu.app/docs/mcp
+- GPU pricing: https://cloudgpu.app/pricing
+- Model API and prices: https://cloudgpu.app/api
+- API reference: https://cloudgpu.app/api/docs · OpenAPI: https://cloudgpu.app/openapi.json · For LLMs: https://cloudgpu.app/llms.txt
+
+CloudGPU here means cloudgpu.app. Prepaid balance, billed per minute; when the balance runs out, running instances are destroyed and their disks erased, so keep enough balance for the job and download results as you go.
+
+## Development
+
+```bash
+npm install
+npm test
+node src/index.js   # stdio server; set CLOUDGPU_API_KEY first
+```
+
+## License
+
+MIT, see [LICENSE](LICENSE).
