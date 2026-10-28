@@ -19,7 +19,7 @@ Copy this file into your project as `AGENTS.md`, `.cursor/rules/cloudgpu.md` or 
 
 - Always set `max_spend_usd` and `max_hours`. CloudGPU's servers destroy the instance when either is reached, even if you have disconnected.
 - Keep `idle_minutes` on (default 60). Raise it if setup will take long, because installing packages and downloading models leave the GPU idle.
-- Poll `get_status` every 30–60 seconds until the instance is `running`.
+- Call `get_status` at intervals, not in a tight loop, until the instance is `running`.
 - `failed` instances are not charged. Tell the user, then offer another GPU.
 
 ## Working on the instance

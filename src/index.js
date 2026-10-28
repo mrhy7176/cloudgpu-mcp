@@ -27,7 +27,7 @@ import {
   shq,
 } from "./guards.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const RULES = fs.readFileSync(path.join(HERE, "..", "rules", "cloudgpu.md"), "utf8");
 
@@ -334,7 +334,7 @@ if (!cfg.readOnly) {
       track(inst.id);
       return ok({
         ...publicInstance(inst),
-        next: "Poll get_status every 30-60 seconds until status is running, then upload and run_command.",
+        next: "Call get_status at intervals (not in a tight loop) until status is running, then upload and run_command.",
       });
     }),
   );
