@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+  # manual run: publishes the version in package.json from the chosen branch
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -21,6 +23,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - name: Check tag matches package.json version
+        if: github.event_name == 'push'
         run: |
           test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
       - run: npm publish --access public --provenance
