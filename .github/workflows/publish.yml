@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*"
-  # 手动触发：在 main 上发布 package.json 里的版本（推不了 tag 时用）
+  # manual run: publishes the version in package.json from the chosen branch
   workflow_dispatch:
 
 permissions:
