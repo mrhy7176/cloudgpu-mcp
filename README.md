@@ -99,7 +99,13 @@ The same guidance is available as two [Agent Skills](https://agentskills.io):
 - [`skills/cloudgpu/SKILL.md`](skills/cloudgpu/SKILL.md): renting and using a GPU. Claude Code loads it on demand when you ask for a GPU job. It expects the `cloudgpu` MCP tools to be installed (see above).
 - [`skills/cloudgpu-model-api/SKILL.md`](skills/cloudgpu-model-api/SKILL.md): calling the OpenAI-compatible model API at `https://cloudgpu.app/v1` without renting a GPU. It works with the MCP tools or with just a `CLOUDGPU_API_KEY`.
 
-- **Claude plugin:** both skills are included automatically when you install the CloudGPU Claude plugin.
+- **Claude plugin:** both skills are included automatically when you install the CloudGPU Claude plugin from this repo's marketplace:
+
+  ```
+  /plugin marketplace add mrhy7176/cloudgpu-mcp
+  /plugin install cloudgpu@cloudgpu
+  ```
+
 - **Claude Code, personal install:** copy `skills/cloudgpu/` and `skills/cloudgpu-model-api/` to `~/.claude/skills/`.
 - **Claude Code, project install:** copy `skills/cloudgpu/` and `skills/cloudgpu-model-api/` to `.claude/skills/` in your project.
 
