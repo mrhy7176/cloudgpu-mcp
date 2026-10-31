@@ -297,7 +297,7 @@ if (!cfg.readOnly) {
           .default(60)
           .describe("Destroy after the GPU has been idle this long; 0 turns it off; otherwise at least 10"),
       },
-      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
     },
     wrap(async ({ quote_id, user_confirmed, max_spend_usd, max_hours, idle_minutes = 60 }) => {
       if (user_confirmed !== true) {
