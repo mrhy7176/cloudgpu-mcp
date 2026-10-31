@@ -92,6 +92,14 @@ extensions:
 
 To check the install, ask your agent: "List the GPUs available, then estimate the cost for a 24 GB GPU for one hour. Do not create anything." You should see `list_gpus` and `estimate_cost` calls and a quote, and nothing is rented.
 
+## Agent Skill
+
+The same guidance is available as an [Agent Skill](https://agentskills.io): [`skills/cloudgpu/SKILL.md`](skills/cloudgpu/SKILL.md). Claude Code loads it on demand when you ask for a GPU job. It expects the `cloudgpu` MCP tools to be installed (see above).
+
+- **Claude plugin:** the skill is included automatically when you install the CloudGPU Claude plugin.
+- **Claude Code, personal install:** copy `skills/cloudgpu/` to `~/.claude/skills/cloudgpu/`.
+- **Claude Code, project install:** copy `skills/cloudgpu/` to `.claude/skills/cloudgpu/` in your project.
+
 ## Tools
 
 | Tool | What it does |
