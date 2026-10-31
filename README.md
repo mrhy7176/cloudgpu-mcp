@@ -108,6 +108,11 @@ The same guidance is available as two [Agent Skills](https://agentskills.io):
 
 - **Claude Code, personal install:** copy `skills/cloudgpu/` and `skills/cloudgpu-model-api/` to `~/.claude/skills/`.
 - **Claude Code, project install:** copy `skills/cloudgpu/` and `skills/cloudgpu-model-api/` to `.claude/skills/` in your project.
+- **Cursor, Codex, Cline, Amp and other agents that read Agent Skills:** install both skills with the [skills CLI](https://skills.sh):
+
+  ```
+  npx skills add mrhy7176/cloudgpu-mcp
+  ```
 
 ## Tools
 
